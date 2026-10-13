@@ -1,6 +1,6 @@
 // Fabric Hot Reload: one-line integration for a Fabric mod project. Add to build.gradle:
 //
-//     apply from: 'https://raw.githubusercontent.com/JHVIW/fabric-hot-reload/v1.0.0/gradle/hotreload.gradle'
+//     apply from: 'https://raw.githubusercontent.com/JHVIW/fabric-hot-reload/v1.0.1/gradle/hotreload.gradle'
 //
 // (build.gradle.kts: apply(from = "https://...")). Then, with Minecraft running and Fabric Hot Reload installed:
 //

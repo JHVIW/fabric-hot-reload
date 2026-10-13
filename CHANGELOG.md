@@ -1,3 +1,8 @@
+## 1.0.1
+
+- CurseForge setup: also update CurseForge's own instance cache (`agent/GameInstances/MinecraftGameInstance.json`). CurseForge restores `minecraftinstance.json` from it on start, which undid the JVM arguments, so the game started on JetBrains Runtime but in basic mode. `--undo` restores the cache too.
+- Tested end to end in a real CurseForge instance on Windows: setup, full hotswap, hot-loading a new mod with a mixin, key binding and translations, live edits, `/hotreload` and `/hotreload setup`.
+
 ## 1.0.0
 
 First release, for Minecraft 26.3 (Fabric Loader 0.19.5+, Fabric API).

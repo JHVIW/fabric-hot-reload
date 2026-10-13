@@ -35,7 +35,7 @@ the others keep working as before) and adds the flags to this instance's JVM arg
 2. Run the command `/hotreload setup` printed (click it to copy), for example:
 
    ```shell
-   "C:\Users\you\.hotreload\jbr\...\bin\java.exe" -jar "C:\...\Instances\My Instance\mods\fabric-hot-reload-1.0.0.jar" curseforge "C:\...\Instances\My Instance"
+   "C:\Users\you\.hotreload\jbr\...\bin\java.exe" -jar "C:\...\Instances\My Instance\mods\fabric-hot-reload-<version>.jar" curseforge "C:\...\Instances\My Instance"
    ```
 
 Both files (`%APPDATA%\CurseForge\storage.json` and the instance's `minecraftinstance.json`) are backed up into

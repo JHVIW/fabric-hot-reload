@@ -23,8 +23,10 @@ import java.util.stream.Stream;
  * 26.x uses Java 25, so the "java25" path is set to JBR (affects every instance on Java 25, which is harmless: JBR
  * is a normal OpenJDK build). Only the given instance gets G1 + the hotswap flag in its JVM arguments.
  * <p>
- * Both files are edited as text so everything else stays byte-identical, and backed up first. CurseForge must be
- * closed: it rewrites both files when it exits. JDK classes only (runs via {@code java -jar}).
+ * The JVM arguments live in two places: the instance's {@code minecraftinstance.json} and CurseForge's own instance
+ * cache ({@code agent/GameInstances/MinecraftGameInstance.json}), which overwrites the former when CurseForge starts.
+ * All files are edited as text so everything else stays byte-identical, and backed up first. CurseForge must be
+ * closed: it rewrites them when it exits. JDK classes only (runs via {@code java -jar}).
  */
 public final class CurseForgeSetup {
 	private static final String BACKUP_PREFIX = "hotreload-backup-";
@@ -57,10 +59,18 @@ public final class CurseForgeSetup {
 			throw new IOException("Java not found: " + java);
 		}
 
+		Path cache = agentCacheFile();
+		// Check the cache entry exists before touching anything.
+		String cacheRaw = Files.isRegularFile(cache) ? read(cache) : null;
+		String newCache = cacheRaw != null ? withHotswapArgsInCache(cacheRaw, instanceDir) : null;
+
 		Path backup = instanceDir.resolve(BACKUP_PREFIX + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")));
 		Files.createDirectories(backup);
 		Files.copy(storage, backup.resolve("storage.json"));
 		Files.copy(instance, backup.resolve("minecraftinstance.json"));
+		if (cacheRaw != null) {
+			Files.copy(cache, backup.resolve(cache.getFileName()));
+		}
 
 		List<String> done = new ArrayList<>();
 		done.add("backup: " + backup);
@@ -68,6 +78,10 @@ public final class CurseForgeSetup {
 		done.add("CurseForge Java 25 path -> " + java);
 		String args = read(instance);
 		String newArgs = withHotswapArgs(args);
+		// CurseForge restores minecraftinstance.json from its own instance cache on start, so both must agree.
+		if (newCache != null) {
+			write(cache, newCache);
+		}
 		if (!newArgs.equals(args)) {
 			write(instance, newArgs);
 			done.add("instance JVM arguments -> " + currentArgs(newArgs).orElse(""));
@@ -75,6 +89,11 @@ public final class CurseForgeSetup {
 			done.add("instance JVM arguments already set");
 		}
 		return done;
+	}
+
+	/** CurseForge's own copy of every instance's settings; it wins over minecraftinstance.json when CurseForge starts. */
+	public static Path agentCacheFile() {
+		return storageFile().resolveSibling("agent").resolve("GameInstances").resolve("MinecraftGameInstance.json");
 	}
 
 	/** Restores the files from the newest backup made by {@link #apply}. */
@@ -87,7 +106,68 @@ public final class CurseForgeSetup {
 		}
 		Files.copy(backup.resolve("storage.json"), storageFile(), StandardCopyOption.REPLACE_EXISTING);
 		Files.copy(backup.resolve("minecraftinstance.json"), instanceDir.resolve("minecraftinstance.json"), StandardCopyOption.REPLACE_EXISTING);
+		Path cache = backup.resolve(agentCacheFile().getFileName());
+		if (Files.isRegularFile(cache)) {
+			Files.copy(cache, agentCacheFile(), StandardCopyOption.REPLACE_EXISTING);
+		}
 		return List.of("restored from " + backup);
+	}
+
+	// ---- agent cache ---------------------------------------------------------------------------------------------
+
+	/**
+	 * The cache is a JSON array with one object per instance. Finds the object whose {@code installPath} is this
+	 * instance and applies {@link #withHotswapArgs} inside it only.
+	 */
+	static String withHotswapArgsInCache(String raw, Path instanceDir) throws IOException {
+		Path wanted = instanceDir.toAbsolutePath().normalize();
+		Pattern installPath = Pattern.compile("\"installPath\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+		for (int[] span : topLevelObjects(raw)) {
+			String object = raw.substring(span[0], span[1]);
+			Matcher m = installPath.matcher(object);
+			while (m.find()) {
+				try {
+					if (Path.of(unescapeJson(m.group(1))).toAbsolutePath().normalize().equals(wanted)) {
+						return raw.substring(0, span[0]) + withHotswapArgs(object) + raw.substring(span[1]);
+					}
+				} catch (RuntimeException ignored) {
+					// not a path; keep looking
+				}
+			}
+		}
+		throw new IOException("instance " + wanted + " not found in " + agentCacheFile() + " (start it once from CurseForge, then retry)");
+	}
+
+	/** [start, end) of each object directly inside the top-level array, skipping over strings. */
+	private static List<int[]> topLevelObjects(String raw) {
+		List<int[]> spans = new ArrayList<>();
+		int depth = 0;
+		int start = -1;
+		boolean inString = false;
+		for (int i = 0; i < raw.length(); i++) {
+			char c = raw.charAt(i);
+			if (inString) {
+				if (c == '\\') {
+					i++;
+				} else if (c == '"') {
+					inString = false;
+				}
+			} else if (c == '"') {
+				inString = true;
+			} else if (c == '{' || c == '[') {
+				if (c == '{' && depth == 1) {
+					start = i;
+				}
+				depth++;
+			} else if (c == '}' || c == ']') {
+				depth--;
+				if (c == '}' && depth == 1 && start >= 0) {
+					spans.add(new int[] {start, i + 1});
+					start = -1;
+				}
+			}
+		}
+		return spans;
 	}
 
 	public static void checkClosed() throws IOException {

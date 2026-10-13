@@ -54,10 +54,10 @@ API. Works with Prism Launcher, MultiMC, Modrinth App, CurseForge and the offici
 **2. Add one line** to your mod's `build.gradle`:
 
 ```groovy
-apply from: 'https://raw.githubusercontent.com/JHVIW/fabric-hot-reload/v1.0.0/gradle/hotreload.gradle'
+apply from: 'https://raw.githubusercontent.com/JHVIW/fabric-hot-reload/v1.0.1/gradle/hotreload.gradle'
 ```
 
-<sub>`build.gradle.kts`: `apply(from = "https://raw.githubusercontent.com/JHVIW/fabric-hot-reload/v1.0.0/gradle/hotreload.gradle")`</sub>
+<sub>`build.gradle.kts`: `apply(from = "https://raw.githubusercontent.com/JHVIW/fabric-hot-reload/v1.0.1/gradle/hotreload.gradle")`</sub>
 
 **3. Start Minecraft, then run** in your mod project:
 

@@ -3,7 +3,7 @@ plugins {
 }
 
 // Fabric Hot Reload: in your own mod use the URL form,
-//   apply from: 'https://raw.githubusercontent.com/JHVIW/fabric-hot-reload/v1.0.0/gradle/hotreload.gradle'
+//   apply from: 'https://raw.githubusercontent.com/JHVIW/fabric-hot-reload/v1.0.1/gradle/hotreload.gradle'
 apply from: '../../gradle/hotreload.gradle'
 
 version = project.mod_version
