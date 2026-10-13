@@ -111,6 +111,17 @@ you used `./gradlew hotReload` on; those are remembered in `~/.hotreload/project
 
 How it works under the hood: [docs/how-it-works.md](docs/how-it-works.md).
 
+## Tested
+
+| | |
+|---|---|
+| CurseForge on Windows | ✅ end to end: setup, full hotswap, hot-loading a new mod (mixin, key binding, translations), live edits, `/hotreload` |
+| Loom dev client (`runClient`) | ✅ basic and full hotswap, new mods, mixins, resources, compile errors |
+| Prism Launcher, MultiMC, Modrinth App, official launcher | ⚠️ not tested yet; the setup steps in [docs/launchers.md](docs/launchers.md) are written from those launchers' settings screens |
+| Linux, macOS | ⚠️ not tested yet |
+
+Tried it somewhere else? Please open an issue either way.
+
 ## Building
 
 Requires JDK 25.
