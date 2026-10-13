@@ -14,6 +14,8 @@ Code, mixins, lang files, textures, and even <b>brand-new mods</b> load without 
 <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
 </p>
 
+![Fabric Hot Reload: a mod's HUD text edited and reloaded while the game runs](docs/gallery/0-featured.png)
+
 ```text
 $ ./gradlew hotReload
 > Task :compileClientJava
@@ -74,6 +76,12 @@ SHA-512 verified) and shows click-to-copy values for your launcher. For CurseFor
 for you. Details per launcher: [docs/launchers.md](docs/launchers.md).
 
 Try it without your own mod: `./gradlew -p examples/hello-hotreload hotReload` in a clone of this repo.
+
+## Screenshots
+
+| A new mod loaded into the running game | The same mod edited live | `/hotreload` |
+|---|---|---|
+| ![](docs/gallery/1-hot-loaded.png) | ![](docs/gallery/2-live-edit.png) | ![](docs/gallery/3-status.png) |
 
 ## Commands
 
