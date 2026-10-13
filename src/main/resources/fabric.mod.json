@@ -1,0 +1,29 @@
+{
+	"schemaVersion": 1,
+	"id": "hotreload",
+	"version": "${version}",
+	"name": "Fabric Hot Reload",
+	"description": "Build your mod while Minecraft is running and see the change in-game within a second. Hot-swaps code and mixins, and even loads brand-new mods without a restart. Developer tool.",
+	"authors": [
+		"JHVIW"
+	],
+	"contact": {
+		"homepage": "https://github.com/JHVIW/fabric-hot-reload",
+		"sources": "https://github.com/JHVIW/fabric-hot-reload",
+		"issues": "https://github.com/JHVIW/fabric-hot-reload/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/hotreload/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"io.github.jhviw.hotreload.HotReload"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

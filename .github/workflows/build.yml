@@ -1,0 +1,23 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - name: Build
+        run: ./gradlew build
+      - name: Compile the example mod
+        run: ./gradlew -p examples/hello-hotreload classes clientClasses
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fabric-hot-reload
+          path: build/libs/*.jar

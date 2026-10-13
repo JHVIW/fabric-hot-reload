@@ -1,0 +1,97 @@
+// Fabric Hot Reload: one-line integration for a Fabric mod project. Add to build.gradle:
+//
+//     apply from: 'https://raw.githubusercontent.com/JHVIW/fabric-hot-reload/v1.0.0/gradle/hotreload.gradle'
+//
+// (build.gradle.kts: apply(from = "https://...")). Then, with Minecraft running and Fabric Hot Reload installed:
+//
+//     ./gradlew hotReload        compile and load/update this mod in the running game
+//     ./gradlew hotReload -t     the same on every save
+//
+// The task registers this project in ~/.hotreload/projects.json (the game watches every project listed there) and
+// prints what the game did, read from ~/.hotreload/events.log.
+
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+def hotReloadHome = new File(System.getProperty('user.home'), '.hotreload')
+def hotReloadRegistry = new File(hotReloadHome, 'projects.json')
+def hotReloadEvents = new File(hotReloadHome, 'events.log')
+def hotReloadProjectDir = project.projectDir.canonicalPath
+def hotReloadModJson = file('src/main/resources/fabric.mod.json')
+def hotReloadModId = hotReloadModJson.exists() ? (new JsonSlurper().parse(hotReloadModJson).id as String) : null
+
+long hotReloadOffset = 0
+
+tasks.register('hotReload') {
+	group = 'fabric'
+	description = 'Compiles this mod and loads it into every running game that has Fabric Hot Reload installed.'
+	// Resolved late: Loom's split client source set (clientClasses) may be created after this script is applied.
+	dependsOn { ['classes', 'clientClasses'].findAll { project.tasks.names.contains(it) } }
+	notCompatibleWithConfigurationCache('reads the hot reload event log of the running game')
+
+	doLast {
+		// Register this project and ask the game to (re)load it; it answers in the event log, even when up to date.
+		hotReloadHome.mkdirs()
+		def registry = [projects: [], requests: [:]]
+		if (hotReloadRegistry.exists()) {
+			try {
+				def parsed = new JsonSlurper().parse(hotReloadRegistry)
+				registry.projects = (parsed.projects ?: []) as List
+				registry.requests = (parsed.requests ?: [:]) as Map
+			} catch (Exception ignored) {
+				// unreadable: start over
+			}
+		}
+		if (!registry.projects.contains(hotReloadProjectDir)) {
+			registry.projects << hotReloadProjectDir
+		}
+		registry.requests[hotReloadProjectDir] = System.currentTimeMillis()
+		def tmp = new File(hotReloadHome, 'projects.json.tmp')
+		tmp.text = JsonOutput.prettyPrint(JsonOutput.toJson(registry))
+		Files.move(tmp.toPath(), hotReloadRegistry.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+
+		// Wait for the game to pick the build up, then collect what it reports for this mod.
+		long deadline = System.currentTimeMillis() + 15_000
+		long quietUntil = Long.MAX_VALUE
+		List<String> seen = []
+		while (System.currentTimeMillis() < Math.min(deadline, quietUntil)) {
+			sleep 250
+			if (!hotReloadEvents.exists() || hotReloadEvents.length() <= hotReloadOffset) {
+				continue
+			}
+			def lines = []
+			hotReloadEvents.withInputStream { input ->
+				input.skip(hotReloadOffset)
+				lines = new String(input.readAllBytes(), 'UTF-8').readLines()
+			}
+			lines.each { line ->
+				def parts = line.split('\t', 4)
+				if (parts.length == 4 && (parts[1] == hotReloadModId || parts[1] == '*') && !seen.contains(line)) {
+					seen << line
+					quietUntil = System.currentTimeMillis() + 1_500
+					String text = "Hot Reload: ${parts[3]}"
+					if (parts[2] == 'ERROR') {
+						logger.error(text)
+					} else if (parts[2] == 'WARN') {
+						logger.warn(text)
+					} else {
+						logger.lifecycle(text)
+					}
+				}
+			}
+		}
+		if (seen.isEmpty()) {
+			logger.warn('Hot Reload: no reaction from a running game. Is Minecraft running with Fabric Hot Reload ' +
+				'installed? (In game, /hotreload shows the watched projects.)')
+		}
+	}
+}
+
+gradle.taskGraph.whenReady { graph ->
+	if (graph.allTasks.any { it.name == 'hotReload' && it.project == project }) {
+		// Remember where the log ends before compiling, so the game's reaction to this build is not missed.
+		hotReloadOffset = hotReloadEvents.exists() ? hotReloadEvents.length() : 0
+	}
+}

@@ -1,0 +1,5 @@
+{
+	"key.category.hello_hotreload.main": "Hello Hot Reload",
+	"key.hello_hotreload.greet": "Say hello",
+	"message.hello_hotreload.greet": "Hello! Edit me in en_us.json and run ./gradlew hotReload"
+}

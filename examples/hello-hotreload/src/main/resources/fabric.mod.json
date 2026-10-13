@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"id": "hello_hotreload",
+	"version": "${version}",
+	"name": "Hello Hot Reload",
+	"description": "Example mod for Fabric Hot Reload.",
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.example.hello.HelloHotReload"
+		]
+	},
+	"mixins": [
+		{
+			"config": "hello_hotreload.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"fabric-api": "*"
+	}
+}
